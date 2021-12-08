@@ -73,6 +73,12 @@ jobs:
           cargo install cargo-deb
           cargo deb --target x86_64-unknown-linux-musl -q 
 
+      - name: Show information
+        run: | 
+          ls -lah target/x86_64-unknown-linux-musl/debian
+          ls -lah target/x86_64-unknown-linux-musl/release
+          echo ${VERSION}
+
       - name: Packaging binaries
         run: |
           chmod +x target/x86_64-unknown-linux-musl/debian/findora-exporter_${VERSION}_amd64.deb
@@ -113,11 +119,3 @@ jobs:
           asset_path: ./findora-exporter_${VERSION}_amd64.deb
           asset_name: findora-exporter_${VERSION}_amd64.deb
           asset_content_type: application/x-deb
-
-        # - name: Debugging
-        #   run: | 
-        #     ls -lah target/x86_64-unknown-linux-musl/debian
-        #     ls -lah target/x86_64-unknown-linux-musl/release
-        #     echo ${VERSION}
-        #     echo ${{ steps.info.outputs.version }}
-        #     echo ${{ steps.create_release.outputs.upload_url }}
