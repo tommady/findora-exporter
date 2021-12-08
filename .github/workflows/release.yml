@@ -1,0 +1,79 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "[0-9]+.[0-9]+.[0-9]+"
+jobs:
+  # check:
+  #   name: Checking Linter and Test cases
+  #   runs-on: ubuntu-latest 
+  #   steps:
+  #   - name: Checkout repo
+  #     uses: actions/checkout@v2
+  #     with:
+  #       fetch-depth: 1
+
+  #   - name: Install minimal stable with clippy and rustfmt
+  #     uses: actions-rs/toolchain@v1
+  #     with:
+  #       profile: minimal
+  #       toolchain: stable
+  #       components: rustfmt, clippy 
+
+  #   - name: Check Formatting
+  #     run: cargo fmt --all -- --check 
+
+  #   - name: Check Clippy Lints 
+  #     run: cargo clippy --all-targets --all-features -- -D warnings 
+
+  #   - name: Run Tests 
+  #     run: cargo test --all --all-features --no-fail-fast  
+
+  publish:
+    name: Publish releases
+      #needs: check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 1
+
+      - name: Determine release info
+        env:
+          GITHUB_REF: ${{ github.ref }}
+        run: |
+          VERSION=${GITHUB_REF##*/}
+          MAJOR=${VERSION%%.*}
+          MINOR=${VERSION%.*}
+          MINOR=${MINOR#*.}
+          PATCH=${VERSION##*.}
+          echo "::set-output name=version::${VERSION}"
+          echo "::set-output name=outputdir::youki_${MAJOR}_${MINOR}_${PATCH}_linux"
+          echo "::set-output name=innerdir::youki-${VERSION}"
+
+
+      - name: Install dependencies
+        run: |
+          sudo apt -y update
+          sudo apt install -y musl musl-dev musl-tools
+
+      - name: Setting rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+          profile: minimal
+
+      # I used a tricky way to do the building,
+      # since cargo deb will building out 
+      # 1. deb 
+      # 2. musl binary
+      # so I simply use that tool's output as releasing binaries
+      - name: Building binaries
+        run: |
+          cargo install cargo-deb
+          cargo deb --target x86_64-unknown-linux-musl -v 
+
+      # - name: Uploading binaries
