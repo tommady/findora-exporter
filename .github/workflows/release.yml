@@ -75,16 +75,18 @@ jobs:
 
       - name: Show information
         run: | 
-          ls -lah target/x86_64-unknown-linux-musl/debian
-          ls -lah target/x86_64-unknown-linux-musl/release
-          echo ${{ steps.info.outputs.version }}
+          echo "deb size"
+          ls -lah target/x86_64-unknown-linux-musl/debian/*.deb
+          echo "musl binary size"
+          ls -lah target/x86_64-unknown-linux-musl/release/findora-exporter
+          echo "version: ${{ steps.info.outputs.version }}"
 
       - name: Packaging binaries
         run: |
           chmod +x target/x86_64-unknown-linux-musl/debian/findora-exporter_${{ steps.info.outputs.version }}_amd64.deb
           mv target/x86_64-unknown-linux-musl/debian/findora-exporter_${{ steps.info.outputs.version }}_amd64.deb ./findora-exporter_${{ steps.info.outputs.version }}_amd64.deb
           chmod +x target/x86_64-unknown-linux-musl/release/findora-exporter
-          run: mkdir -p ${{ steps.info.outputs.outputdir }}/${{ steps.info.outputs.innerdir }}
+          mkdir -p ${{ steps.info.outputs.outputdir }}/${{ steps.info.outputs.innerdir }}
           cp LICENSE ${{ steps.info.outputs.outputdir }}/${{ steps.info.outputs.innerdir }}/LICENSE 
           cp README.md ${{ steps.info.outputs.outputdir }}/${{ steps.info.outputs.innerdir }}/README.md 
           cp target/x86_64-unknown-linux-musl/release/findora-exporter ${{ steps.info.outputs.outputdir }}/${{ steps.info.outputs.innerdir }}/findora-exporter
