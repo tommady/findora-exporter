@@ -47,6 +47,8 @@ jobs:
         run: |
           VERSION=${GITHUB_REF##*/}
           echo "::set-output name=version::${VERSION}"
+          echo "::set-output name=outputdir::findora-exporter-${VERSION}-x86_64-unknown-linux-musl"
+          echo "::set-output name=innerdir::findora-exporter-${VERSION}"
 
       - name: Install dependencies
         run: |
@@ -71,6 +73,17 @@ jobs:
           cargo install cargo-deb
           cargo deb --target x86_64-unknown-linux-musl -q 
 
+      - name: Packaging binaries
+        run: |
+          chmod +x target/x86_64-unknown-linux-musl/debian/findora-exporter_${VERSION}_amd64.deb
+          mv target/x86_64-unknown-linux-musl/debian/findora-exporter_${VERSION}_amd64.deb ./findora-exporter_${VERSION}_amd64.deb
+          chmod +x target/x86_64-unknown-linux-musl/release/findora-exporter
+          run: mkdir -p ${{ steps.info.outputs.outputdir }}/${{ steps.info.outputs.innerdir }}
+          cp LICENSE ${{ steps.info.outputs.outputdir }}/${{ steps.info.outputs.innerdir }}/LICENSE 
+          cp README.md ${{ steps.info.outputs.outputdir }}/${{ steps.info.outputs.innerdir }}/README.md 
+          cp target/x86_64-unknown-linux-musl/release/findora-exporter ${{ steps.info.outputs.outputdir }}/${{ steps.info.outputs.innerdir }}/findora-exporter
+          tar -zcvf ${{ steps.info.outputs.outputdir }}.tar.gz ${{ steps.info.outputs.outputdir }}
+
       - name: Create draft release
         id: create_release
         uses: actions/create-release@v1
@@ -81,11 +94,30 @@ jobs:
           release_name: ${{ steps.info.outputs.version }} Release
           draft: true
 
-      # - name: Uploading binaries
-      - name: Debugging
-        run: | 
-          ls -lah target/x86_64-unknown-linux-musl/debian
-          ls -lah target/x86_64-unknown-linux-musl/release
-          echo ${VERSION}
-          echo ${{ steps.info.outputs.version }}
-          echo ${{ steps.create_release.outputs.upload_url }}
+      - name: Uploading musl binary
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./${{ steps.info.outputs.outputdir }}.tar.gz
+          asset_name: ${{ steps.info.outputs.outputdir }}.tar.gz
+          asset_content_type: application/gzip
+
+      - name: Uploading deb package
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./findora-exporter_${VERSION}_amd64.deb
+          asset_name: findora-exporter_${VERSION}_amd64.deb
+          asset_content_type: application/x-deb
+
+        # - name: Debugging
+        #   run: | 
+        #     ls -lah target/x86_64-unknown-linux-musl/debian
+        #     ls -lah target/x86_64-unknown-linux-musl/release
+        #     echo ${VERSION}
+        #     echo ${{ steps.info.outputs.version }}
+        #     echo ${{ steps.create_release.outputs.upload_url }}
