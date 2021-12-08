@@ -50,8 +50,6 @@ jobs:
           MINOR=${MINOR#*.}
           PATCH=${VERSION##*.}
           echo "::set-output name=version::${VERSION}"
-          echo "::set-output name=outputdir::youki_${MAJOR}_${MINOR}_${PATCH}_linux"
-          echo "::set-output name=innerdir::youki-${VERSION}"
 
 
       - name: Install dependencies
@@ -75,6 +73,13 @@ jobs:
       - name: Building binaries
         run: |
           cargo install cargo-deb
-          cargo deb --target x86_64-unknown-linux-musl -v 
+          cargo deb --target x86_64-unknown-linux-musl -q 
 
       # - name: Uploading binaries
+      - name: Debugging
+        run: | 
+          ls -la
+          ls -la target/
+          ls -la target/x86_64-unknown-linux-musl
+          echo $VERSION
+          echo ${{ steps.info.outputs.version }}
